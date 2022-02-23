@@ -1,7 +1,7 @@
 #
 # SemEHR Dockerfile
 #
-FROM ubuntu:latest
+FROM ubuntu:20.04
 MAINTAINER Honghan Wu "honghan.wu@gmail.com"
 
 ########
