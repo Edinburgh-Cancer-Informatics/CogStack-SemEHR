@@ -2,7 +2,8 @@
 # SemEHR Dockerfile
 #
 FROM ubuntu:20.04
-MAINTAINER Honghan Wu "honghan.wu@gmail.com"
+LABEL org.opencontainers.image.authors="honghan.wu@gmail.com, paul.d.mitchell@ed.ac.uk"
+LABEL org.opencontainers.image.vendor="Edinburgh-Cancer-Informatics"
 
 ########
 # Pre-reqs
