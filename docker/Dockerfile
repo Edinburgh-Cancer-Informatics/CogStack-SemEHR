@@ -10,22 +10,18 @@ LABEL org.opencontainers.image.vendor="Edinburgh-Cancer-Informatics"
 ########
 RUN apt-get update \
 && apt-get -y install software-properties-common
-# && add-apt-repository ppa:webupd8team/java
 
 RUN apt-get update
-# RUN echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections
 
 RUN apt-get install -y \
 	ant \
 	curl \
-#	oracle-java8-installer \
 	openjdk-11-jdk \
 	subversion \
 	unzip \
 	vim \
 	git
 
-# ENV JAVA_HOME /usr/lib/jvm/java-8-oracle/
 ENV JAVA_HOME /usr/lib/jvm/open-jdk/
 
 
@@ -38,7 +34,7 @@ WORKDIR '/opt/gcp'
 ENV JAVA_TOOL_OPTIONS '-Dfile.encoding=UTF8'
 
 RUN cd /opt/gcp
-#at this moment, bio-yodie requires this particular subversion of GCP
+# at this moment, bio-yodie requires this particular subversion of GCP
 RUN svn co http://svn.code.sf.net/p/gate/code/gcp/trunk@18658 gcp-2.5-18658
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
 RUN cd /opt/gcp/gcp-2.5-18658 && ant
@@ -76,12 +72,9 @@ RUN pip install requests
 RUN pip install lxml
 RUN pip install pyquery
 RUN pip install joblib
-# RUN pip install hashlib
-# RUN easy_install hashlib
 RUN pip install urllib3
 RUN pip install Elasticsearch
 RUN apt-get -y install python-mysqldb
-#RUN pip install MySQL-python
 
 RUN apt-get -y install unixodbc unixodbc-dev libmysqlclient-dev freetds-dev tdsodbc
 RUN pip install pyodbc
@@ -95,7 +88,6 @@ RUN curl -L 'https://cdn.mysql.com//Downloads/Connector-ODBC/8.0/mysql-connector
 RUN mkdir /opt/semehr
 WORKDIR '/opt/semehr'
 RUN cd /opt/semehr
-# RUN git clone https://github.com/CogStack/CogStack-SemEHR.git
 RUN mkdir /opt/semehr/CogStack-SemEHR
 
 
@@ -103,7 +95,6 @@ ENV semehr_path '/opt/semehr/CogStack-SemEHR'
 ENV PATH "$PATH:$semehr_path:/opt/semehr/"
 ENV CLASSPATH "$GATE_HOME/bin"
 
-# RUN cp ./docker/semehr.sh ./
 RUN curl -L 'https://cogstack.rosalind.kcl.ac.uk/exports/semehr.sh.txt' > semehr.sh
 RUN chmod a+x semehr.sh
 
