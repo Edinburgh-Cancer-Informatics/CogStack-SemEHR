@@ -1,51 +1,81 @@
 #
 # SemEHR Dockerfile
 #
+
+###############
+# Build GCP
+###############
+FROM openjdk:11 AS gcpbuild
+WORKDIR '/opt/'
+
+RUN apt-get update && \ 
+    apt-get install -y ant  && \
+    git clone https://github.com/GateNLP/gcp.git
+
+WORKDIR '/opt/gcp'
+RUN apt-get install -y maven
+RUN git checkout 3.2 && mvn compile && mvn test
+
 FROM ubuntu:20.04
 LABEL org.opencontainers.image.authors="honghan.wu@gmail.com, paul.d.mitchell@ed.ac.uk"
 LABEL org.opencontainers.image.vendor="Edinburgh-Cancer-Informatics"
 
+###########
+# Build Bio-YODIE
+###########
+FROM openjdk:11 AS biobuild
+WORKDIR '/opt/'
+
+RUN apt-get update && \ 
+    apt-get install -y ant  && \
+    curl -L 'https://github.com/GateNLP/gate-core/releases/download/v8.5.1/gate-developer-8.5.1-distro.zip' > gate-8.5.1.zip && \
+    unzip gate-8.5.1.zip && \ 
+    mv gate-developer-8.5.1 gate && \ 
+    rm gate-8.5.1.zip
+ENV GATE_HOME '/opt/gate'
+
+RUN git clone https://github.com/GateNLP/Bio-YODIE.git
+RUN cd /opt/Bio-YODIE && \
+    git pull --recurse-submodules=on-demand && \
+    git submodule update --init --recursive && \
+    plugins/compilePlugins.sh
+
+
+
 ########
 # Pre-reqs
 ########
-RUN apt-get update \
-&& apt-get -y install software-properties-common
-
-RUN apt-get update
-
-RUN apt-get install -y \
-	ant \
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y \
+    software-properties-common \
 	curl \
 	openjdk-11-jdk \
-	subversion \
 	unzip \
-	vim \
-	git
+	git \
+    python3 \
+    python3-pip \
+    wget \
+    python3-setuptools \
+    python3-dev \
+    libxml2-dev \
+    libxslt-dev \
+    zlib1g-dev \
+    build-essential
 
 ENV JAVA_HOME /usr/lib/jvm/open-jdk/
-
-
-########
-# GCP, Gate, Bio-Yodie
-########
-RUN mkdir /opt/gcp
-WORKDIR '/opt/gcp'
-
-ENV JAVA_TOOL_OPTIONS '-Dfile.encoding=UTF8'
-
-RUN cd /opt/gcp
-# at this moment, bio-yodie requires this particular subversion of GCP
-RUN svn co http://svn.code.sf.net/p/gate/code/gcp/trunk@18658 gcp-2.5-18658
 ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
-RUN cd /opt/gcp/gcp-2.5-18658 && ant
-ENV GCP_HOME '/opt/gcp/gcp-2.5-18658'
-
-RUN curl -L 'http://netix.dl.sourceforge.net/project/gate/gate/8.1/gate-8.1-build5169-ALL.zip' > gate-8.1-build5169-ALL.zip && unzip gate-8.1-build5169-ALL.zip && mv gate-8.1-build5169-ALL gate && rm gate-8.1-build5169-ALL.zip
-ENV GATE_HOME '/opt/gcp/gate'
 
 WORKDIR '/opt/gcp/'
-ENV PATH "$PATH:$GCP_HOME:$GATE_HOME/bin"
+COPY --from=gcpbuild /opt/gcp gcp-3.2
 
+ENV GCP_HOME '/opt/gcp/gcp-3.2'
+
+########
+# Gate, Bio-Yodie
+########
+
+ENV PATH "$PATH:$GCP_HOME:$GATE_HOME/bin"
 RUN curl -L 'https://cogstack.rosalind.kcl.ac.uk/exports/bio-yodie-1.2.1-se.tar.gz' > bio-yodie-1.2.1-se.tar.gz && tar xzvf bio-yodie-1.2.1-se.tar.gz && rm bio-yodie-1.2.1-se.tar.gz
 RUN mv bio-yodie-1.2.1 bio-yodie-1-2-1
 
@@ -56,18 +86,6 @@ RUN curl -L 'https://cogstack.rosalind.kcl.ac.uk/exports/customised_handlers.tar
 ########
 # python & libraries for SemEHR
 ########
-RUN apt-get update
-RUN apt-get install -y \
-    python \
-    python-pip \
-    wget \
-    python-setuptools \
-    python-dev \
-    libxml2-dev \
-    libxslt-dev \
-    zlib1g-dev \
-    build-essential
-
 RUN pip install requests
 RUN pip install lxml
 RUN pip install pyquery
